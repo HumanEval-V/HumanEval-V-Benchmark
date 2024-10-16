@@ -65,7 +65,7 @@ pip install -r requirements.txt        # For running only the evaluation with yo
 ### 2. Run Model Inference
 #### Option 1: Using Your Own Inference Script
 
-If you have your own inference script, organize the model predictions in the following format:
+If you have your own inference script, organize the model predictions in the following format (an example prediction file can be found in `output/example_pred_sample_20.json`):
 ```json
 [
   {
