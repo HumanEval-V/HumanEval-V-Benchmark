@@ -93,23 +93,23 @@ If you need to implement your own inference script, refer to the example script 
 After implementing your model, import your LMM into `inference.py` and run the following command:
 
 ```bash
-python inference.py --prediction_file /output/your_lmm.json --sample_num 1 (or 20)
+python inference.py --prediction_file output/your_lmm.json --sample_num 1 (or 20)
 ```
 
-This command will create a JSON file at `/output/your_lmm.json` for evaluation. Set `sample_num` to 1 for calculating _pass@1_ or to 20 for _pass@10_.
+This command will create a JSON file at `output/your_lmm.json` for evaluation. Set `sample_num` to 1 for calculating _pass@1_ or to 20 for _pass@10_.
 
 ### 3. Running Evaluation
 
 After obtaining the model predictions in the specified format, run the evaluation as follows:
 
 ```bash
-python evaluate.py --prediction_file /output/your_lmm.json
+python evaluate.py --prediction_file output/your_lmm.json
 ```
 
-This command will execute the predictions using the test cases and calculate the _pass@k_ score, saving the results to `/output/your_lmm_executed.json`. For subsequent evaluations without re-executing code solutions, you can use:
+This command will execute the predictions using the test cases and calculate the _pass@k_ score, saving the results to `output/your_lmm_executed.json`. For subsequent evaluations without re-executing code solutions, you can use:
 
 ```bash
-python evaluate.py --prediction_file /output/your_lmm.json --score_only
+python evaluate.py --prediction_file output/your_lmm.json --score_only
 ```
 
 ## Citation
