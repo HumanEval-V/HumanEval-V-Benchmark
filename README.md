@@ -2,7 +2,7 @@
 <img src="assets/icon.png" width="32px" height="auto"> HumanEval-V Benchmark
 </h1>
 
-<p align="center"> <a href="">📄 Paper</a> • <a href="https://humaneval-v.github.io">🏠 Home Page</a> • <a href="https://humaneval-v.github.io/#leaderboard">🏆 Leaderboard</a> • <a href="https://huggingface.co/datasets/HumanEval-V/HumanEval-V-Benchmark">🤗 Dataset</a> • <a href="https://huggingface.co/spaces/HumanEval-V/HumanEval-V-Benchmark-Viewer">🤗 Dataset Viewer</a>  </p>
+<p align="center"> <a href="https://arxiv.org/abs/2410.12381">📄 Paper</a> • <a href="https://humaneval-v.github.io">🏠 Home Page</a> • <a href="https://humaneval-v.github.io/#leaderboard">🏆 Leaderboard</a> • <a href="https://huggingface.co/datasets/HumanEval-V/HumanEval-V-Benchmark">🤗 Dataset</a> • <a href="https://huggingface.co/spaces/HumanEval-V/HumanEval-V-Benchmark-Viewer">🤗 Dataset Viewer</a>  </p>
 
 Welcome to the official repository for the paper **"HumanEval-V: Evaluating Visual Understanding and Reasoning Abilities of Large Multimodal Models Through Coding Tasks"**.
 
@@ -114,4 +114,10 @@ python evaluate.py --prediction_file output/your_lmm.json --score_only
 
 ## Citation
 ```bibtex
+@article{zhang2024humanevalv,
+  title={HumanEval-V: Evaluating Visual Understanding and Reasoning Abilities of Large Multimodal Models Through Coding Tasks}, 
+  author={Zhang, Fengji and Wu, Linquan and Bai, Huiyu and Lin, Guancheng and Li, Xiao and Yu, Xiao and Wang, Yue and Chen, Bei and Keung, Jacky},
+  journal={arXiv preprint arXiv:2410.12381},
+  year={2024},
+}
 ```
