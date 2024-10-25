@@ -9,6 +9,7 @@ Welcome to the official repository for the paper **"HumanEval-V: Evaluating Visu
 ## 🌟News
 - **[2024.10.23]** **Claude 3.5 Sonnet (1022)** achieves **new SOTA** on HumanEval-V with **25.9** _pass@1_ and **42.6** _pass@10_
 - **[2024.10.23]** We include more SOTA LMMs in the learderboard, including <a href="https://huggingface.co/mistralai/Pixtral-12B-2409">Pixtral</a>, <a href="https://huggingface.co/meta-llama/Llama-3.2-11B-Vision-Instruct">Llama-3.2-Vision</a>, <a href="https://huggingface.co/rhymes-ai/Aria">Aria</a>, and <a href="https://huggingface.co/AIDC-AI/Ovis1.6-Gemma2-9B">Ovis1.6-Gemma2</a>
+- **[2024.10.23]** We've updated the <i>Parsing Success Rate</i> metric (passing <i>Pylint</i> without errors). Many LMMs perform poorly, indicating a decline in generating syntactically correct code.
 - **[2024.10.17]** Our paper is now accessible at https://huggingface.co/papers/2410.12381 (**#2** Paper of the day)
 
 ## 👀Introduction
