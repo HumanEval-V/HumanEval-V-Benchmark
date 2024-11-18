@@ -1,3 +1,4 @@
+import os
 import ast
 import fire
 import json
@@ -217,6 +218,8 @@ def compute_score(execution_results):
     print(f"Passed QIDs: {passed_qids}")
 
 def main(prediction_file, score_only=False):
+    if not os.path.exists(prediction_file):
+        raise FileNotFoundError(f"{prediction_file} not found.")
     prediction_data = load_json(prediction_file)
     print(f"\nLoaded {len(prediction_data)} questions for {prediction_file}")
     if not score_only:
