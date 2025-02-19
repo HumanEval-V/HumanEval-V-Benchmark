@@ -10,7 +10,7 @@ import signal
 import tempfile
 
 
-def check_correctness(task_id: str, concatenated_code: str, timeout: float) -> Dict:
+def check_correctness(qid: str, task_id: str, concatenated_code: str, timeout: float) -> Dict:
     """
     Evaluates the functional correctness of a completion by running the test
     suite provided in the problem. 
@@ -55,9 +55,9 @@ def check_correctness(task_id: str, concatenated_code: str, timeout: float) -> D
                         exec(check_program, exec_globals)
                 result.append("passed")
             except TimeoutException:
-                result.append("timed out")
+                result.append(f"Test Case Execution Time Out (> {timeout} seconds)")
             except BaseException as e:
-                result.append(f"failed: {e}")
+                result.append(f"{e}")
 
             # Needed for cleaning up.
             shutil.rmtree = rmtree
@@ -74,9 +74,10 @@ def check_correctness(task_id: str, concatenated_code: str, timeout: float) -> D
         p.kill()
 
     if not result:
-        result.append("timed out")
+        result.append(f"Test Case Execution Time Out (> {timeout} seconds)")
 
     return dict(
+        qid=qid,
         task_id=task_id,
         passed=result[0] == "passed",
         result=result[0],

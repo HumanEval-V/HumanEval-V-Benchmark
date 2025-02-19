@@ -1,0 +1,112 @@
+{
+  "builder_name": "parquet",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "human_eval-v-benchmark",
+  "dataset_size": 32918942,
+  "description": "",
+  "download_checksums": {
+    "hf://datasets/HumanEval-V/HumanEval-V-Benchmark@8a3465c8cdcd25f65b3e13651e21cef9406e1799/data/test-00000-of-00001.parquet": {
+      "num_bytes": 32012630,
+      "checksum": null
+    }
+  },
+  "download_size": 32012630,
+  "features": {
+    "qid": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "ground_truth_solution": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "ground_truth_diagram_description": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "test_script": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "function_signature": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "diagram": {
+      "_type": "Image"
+    },
+    "capability_aspects": {
+      "Common Sense": {
+        "feature": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "_type": "Sequence"
+      },
+      "Data Structures": {
+        "feature": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "_type": "Sequence"
+      },
+      "Dynamic Patterns": {
+        "feature": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "_type": "Sequence"
+      },
+      "Geometric Objects": {
+        "feature": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "_type": "Sequence"
+      },
+      "Mathematical Operations": {
+        "feature": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "_type": "Sequence"
+      },
+      "Spatial Transformations": {
+        "feature": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "_type": "Sequence"
+      },
+      "Topological Relations": {
+        "feature": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "_type": "Sequence"
+      }
+    },
+    "task_type": {
+      "dtype": "string",
+      "_type": "Value"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 64931572,
+  "splits": {
+    "test": {
+      "name": "test",
+      "num_bytes": 32918942,
+      "num_examples": 253,
+      "dataset_name": "human_eval-v-benchmark"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}

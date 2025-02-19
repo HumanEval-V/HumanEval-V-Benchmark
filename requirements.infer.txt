@@ -1,6 +1,0 @@
-fire==0.6.0
-datasets==3.0.1
-pillow==10.4.0
-openai==1.51.2
-vllm==0.6.2
-pylint==3.3.1

@@ -10,13 +10,12 @@ from pylint.reporters import JSONReporter
 from io import StringIO
 from collections import defaultdict
 from tqdm import tqdm
-from datasets import load_dataset
 from concurrent.futures import as_completed, ProcessPoolExecutor
 
-from utils import dump_json, load_json, dump_file, delete_file
+from utils import dump_json, load_json, dump_file, delete_file, load_data, make_dir
 from execution import check_correctness
+from inference import EXP_V2C, EXP_V2C_COT, EXP_V2T2C, EXP_V2T2C_4o, EXP_T2C, Experiments
 
-dataset = load_dataset('HumanEval-V/HumanEval-V-Benchmark', split='test')
 
 class CodeExtractor(ast.NodeVisitor):
     def __init__(self):
@@ -63,13 +62,19 @@ def post_process(prediction, signature, test):
     if "```python" in prediction: # ideal situation
         if prediction.count("```python") ==1:
             content = prediction.split("```python")[1].split("```")[0]
-        else: # concatenate if there are multiple code blocks
+        else: # choose the last code block
             code_block_splits = prediction.split("```python")
             content = ""
-            for code_block_split in code_block_splits:
+            possible_content = []
+            for code_block_split in code_block_splits[::-1]:
                 if code_block_split.count("```") != 1:
                     continue
-                content += code_block_split.split("```")[0]
+                if "def solution" in code_block_split:
+                    content += code_block_split.split("```")[0]
+                    break
+                possible_content.append(code_block_split.split("```")[0])
+            else:
+                content += possible_content[-1] if possible_content else "    pass"
     elif "``` python" in prediction:
         content = prediction.split("``` python")[1].split("```")[0]
     else:
@@ -105,33 +110,38 @@ def pylint_check(code):
     delete_file(file_name)
     return errors
 
-def execution_tasks(task_id, concatenated_code, timeout):
+def execution_tasks(qid, task_id, concatenated_code, timeout):
     pylint_errors = pylint_check(concatenated_code)
     if pylint_errors:
         return {
+            'qid': qid,
             'task_id': task_id,
             'passed': 0,
-            'result': "pylint fail:\n" + '\n'.join(pylint_errors)
+            'result': "Pylint syntax check failed:\n" + '\n'.join(pylint_errors)
         }
-    return check_correctness(task_id, concatenated_code, timeout)
+    return check_correctness(qid, task_id, concatenated_code, timeout)
 
 def parallel_execution(concatenated_code_samples, timeout=2):
+    execution_results = defaultdict(list)
+    executed_count = 0
     with ProcessPoolExecutor() as executor:
         futures = []
-        results = []
-        for task_id, concatenated_code in enumerate(concatenated_code_samples):
-            args = (task_id, concatenated_code, timeout)
+        for concatenated_code in concatenated_code_samples:
+            qid, task_id, concatenated_code = concatenated_code['qid'], concatenated_code['task_id'], concatenated_code['concatenated_code']
+            args = (qid, task_id, concatenated_code, timeout)
             future = executor.submit(execution_tasks, *args)
             futures.append(future)
 
-        for future in as_completed(futures):
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Executing code solutions"):
             result = future.result()
-            results.append((result['task_id'], result))
-    assert len(results) == len(concatenated_code_samples), "Some problems are not attempted."
-    return [i[1] for i in sorted(results, key=lambda x: x[0])]
+            executed_count += 1
+            execution_results[result['qid']].append((result['task_id'], result))
+    assert executed_count == len(concatenated_code_samples), "Some problems are not attempted."
+    for qid in execution_results.keys():
+        execution_results[qid] = [i[1] for i in sorted(execution_results[qid], key=lambda x: x[0])]
+    return execution_results
 
-
-def retrieve_qid(qid):
+def retrieve_qid(dataset, qid):
     idx = dataset['qid'].index(qid)
     question_data = {
         'qid': qid,
@@ -140,31 +150,40 @@ def retrieve_qid(qid):
     }
     return question_data
 
-def execute_code(prediction_data):
-    execution_results = []
-    for item in tqdm(prediction_data):
+def execute_code(dataset, prediction_data):
+    final_results_by_qid = dict()
+    concatenated_code_samples = []
+    for item in prediction_data:
         qid = item['qid']
-        question_data = retrieve_qid(qid)
+        question_data = retrieve_qid(dataset, qid)
         predictions = item['predictions']
-        processed_code_samples = []
-        concatenated_code_samples = []
-        for prediction in predictions:
+        item['processed_predictions'] = []
+        item['concatenated_predictions'] = []
+        for idx, prediction in enumerate(predictions):
             processed_code, concatenated_code = post_process(
                 prediction, 
                 question_data['function_signature'], 
                 question_data['test_script']
             )
-            concatenated_code_samples.append(concatenated_code)
-            processed_code_samples.append(processed_code)
-        results = parallel_execution(concatenated_code_samples)
-        item['results'] = results
-        item['processed_predictions'] = processed_code_samples
-        item['concatenated_predictions'] = concatenated_code_samples
-        execution_results.append(item)
-    return execution_results
+            item['processed_predictions'].append(processed_code)
+            item['concatenated_predictions'].append(concatenated_code)
+            concatenated_code_samples.append({
+                'qid': qid,
+                'task_id': idx,
+                'concatenated_code': concatenated_code
+            })
+        final_results_by_qid[qid] = item
+    
+    execution_results = parallel_execution(concatenated_code_samples)
+    final_results_list = []
+    for qid in final_results_by_qid.keys():
+        item = final_results_by_qid[qid]
+        item['results'] = execution_results[qid]
+        final_results_list.append(item)
+    return final_results_list
 
 
-def pass_at_K(passed_results_by_qid, k=[1, 10]):
+def pass_at_K(passed_results_by_qid, k):
     # Calculate pass@k.
     total, correct = [], []
     for passed in passed_results_by_qid.values():
@@ -208,28 +227,71 @@ def compute_score(execution_results):
         results = item['results']
         for result in results:
             passed_results_by_qid[qid].append(result['passed'])
-            pylint_failed_count += 1 if result['result'].startswith("pylint fail") else 0
+            pylint_failed_count += 1 if result['result'].startswith("Pylint") else 0
             
-    k = [1] if sample_num == 1 else [10]
+    k = [1] if sample_num == 1 else [3]
     scores = pass_at_K(passed_results_by_qid, k)
     passed_qids = sorted([k for k, v in passed_results_by_qid.items() if any(v)])
-    print(f"Pass@{k[0]}: {scores}")
-    print(f"Parsing Success Rate: {round(100*(1 - pylint_failed_count / (sample_num*len(execution_results))), 1)}%")
-    print(f"Passed QIDs: {passed_qids}")
+    parse_success_rate = round(100*(1 - pylint_failed_count / (sample_num*len(execution_results))), 1)
+    return {
+        'scores': scores,
+        'parse_success_rate': parse_success_rate,
+        # 'passed_qids': passed_qids
+    }
 
-def main(prediction_file, score_only=False):
-    if not os.path.exists(prediction_file):
+def aggregate_prediction_data(prediction_data):
+    # merge the prompts and predictions with the same qid
+    prediction_data_by_qid = defaultdict(list)
+    for item in prediction_data:
+        qid = item['qid']
+        prediction_data_by_qid[qid].append(item)
+    aggregated_prediction_data = []
+    max_prediction_len = 0
+    for qid in prediction_data_by_qid.keys():
+        prompts = []
+        predictions = []
+        for item in prediction_data_by_qid[qid]:
+            predictions += item['predictions']
+            prompts += [item['prompt']] * len(item['predictions'])
+        max_prediction_len = max(max_prediction_len, len(predictions))
+        if len(predictions) != max_prediction_len:
+            print(f"qid: {qid}, len(predictions): {len(predictions)}, max_prediction_len: {max_prediction_len}")
+            import ipdb
+            ipdb.set_trace()
+        aggregated_prediction_data.append({
+            'qid': qid,
+            'prompts': prompts,
+            'predictions': predictions
+        })
+    return aggregated_prediction_data
+
+def eval_pipeline(prediction_file, score_only=False):
+    if not os.path.exists(prediction_file) and not os.path.exists(prediction_file.replace(".json", "_executed.json")):
         raise FileNotFoundError(f"{prediction_file} not found.")
-    prediction_data = load_json(prediction_file)
-    print(f"\nLoaded {len(prediction_data)} questions for {prediction_file}")
     if not score_only:
-        print(f"Executing code solutions with test cases...")
-        execution_results = execute_code(prediction_data)
+        dataset = load_data()
+        prediction_data = load_json(prediction_file)
+        prediction_data = aggregate_prediction_data(prediction_data)
+        assert len(dataset) == len(prediction_data), "Dataset and prediction data have different lengths."
+        execution_results = execute_code(dataset, prediction_data)
         dump_json(prediction_file.replace(".json", "_executed.json"), execution_results)
     else:
         execution_results = load_json(prediction_file.replace(".json", "_executed.json"))
-    compute_score(execution_results)
+    return compute_score(execution_results)
 
+def main(model_name, exp_type, sample_num, exp_base_dir):
+    make_dir("cache")
+    prediction_file_path = Experiments().get_pred_file_path(model_name, exp_type, sample_num)
+    if type(prediction_file_path) == tuple:
+        prediction_file_path = prediction_file_path[1]
+    prediction_file = os.path.join(exp_base_dir, prediction_file_path)
+    if os.path.exists(prediction_file.replace(".json", "_executed.json")):
+        print(f"{prediction_file} already executed.")
+        result = eval_pipeline(prediction_file, score_only=True)
+    else:
+        print(f"Executing {prediction_file}")
+        result = eval_pipeline(prediction_file)
+    print(result)
 
 if __name__ == "__main__":
     fire.Fire(main)
