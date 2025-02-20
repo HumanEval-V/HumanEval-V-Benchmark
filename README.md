@@ -100,7 +100,7 @@ To implement your own inference script, refer to the example script in `models/e
 - **`load_model`**: Load your multimodal model.
 - **`query`**: Accept a diagram and prompt, then generate and return predictions.
 
-An example implementation for **OpenAI GPT-4o** can be found in `models/gpt_4o.py`. (remember to put your own api key in line 38)
+An example implementation for **OpenAI GPT-4o** can be found in `models/gpt_4o.py`. remember to put your own api key in line https://github.com/HumanEval-V/HumanEval-V-Benchmark/blob/c845eb1eced00776ba06452a9ade7b6bad7edca8/models/gpt_4o.py#L38
 
 #### Choose Your Experiment Type
 
