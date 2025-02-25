@@ -7,8 +7,6 @@
 Welcome to the official repository for **"HumanEval-V: Benchmarking High-Level Visual Reasoning
 with Complex Diagrams in Coding Tasks"**.
 
----
-
 ## 👀Introduction
 **HumanEval-V** is a novel benchmark designed to evaluate the ability of **Large Multimodal Models (LMMs)** to understand and reason over **complex diagrams** in programming contexts. Unlike traditional multimodal or coding benchmarks, **HumanEval-V** challenges models to generate **Python code** based on **visual inputs** that are **indispensable** for solving the task. Our dataset consists of **253 human-annotated coding tasks**, each requiring LMMs to **perceive, interpret, and reason** over diagrams to produce functionally correct code solutions.
 
@@ -39,8 +37,6 @@ Through extensive experiments with **22 state-of-the-art LMMs**, we observe:
 - **Sampling** and **iterative refinement** improve results, with **Claude 3.5 Sonnet** reaching **74.3% pass@1** with 100 samples and **55.3% pass@1** with four self-refinement iterations.  
 - Models struggle with tasks that are trivial for humans, especially in **spatial transformations**, **topological relationships**, and **dynamic patterns**.
 
----
-
 ## 💡 How It Works
 
 <p align="center">
@@ -59,8 +55,6 @@ We use a structured **evaluation pipeline** to assess **visual reasoning** and *
 <img src="./assets/evaluation_pipeline.png" style="width:90%; margin-left: auto; margin-right: auto;">
 </p>
 
----
-
 ## ⚡Quick Start
 ### 1. Environment Setup
 ```bash
@@ -72,8 +66,6 @@ conda create -n humanevalv python=3.12
 conda activate humanevalv
 pip install -r requirements.txt # For a test run using our example scripts
 ```
-
----
 
 ### 2. Run Inference and Evaluation
 
@@ -108,7 +100,7 @@ To implement your own inference script, refer to the example script in `models/e
 - **`load_model`**: Load your multimodal model.
 - **`query`**: Accept a diagram and prompt, then generate and return predictions.
 
-An example implementation for **OpenAI GPT-4o** can be found in `models/gpt_4o.py`.
+An example implementation for **OpenAI GPT-4o** can be found in `models/gpt_4o.py`. remember to put your own api key in line https://github.com/HumanEval-V/HumanEval-V-Benchmark/blob/c845eb1eced00776ba06452a9ade7b6bad7edca8/models/gpt_4o.py#L38
 
 #### Choose Your Experiment Type
 
@@ -142,7 +134,7 @@ for model_name in "${model_names[@]}"; do
 done
 ```
 
-Once the script is set up, simply execute the following command to start the evaluation:
+Simply execute the following command to start the evaluation:
 
 ```bash
 bash run_evaluation.sh
@@ -150,9 +142,8 @@ bash run_evaluation.sh
 
 This will:
 
-1. Run inference using the provided test cases.
-2. Calculate the **pass@k** score and save the results to `output/example_exp/{model_name}_{task_type}_sample_{sample_num}.json`.
-3. Save the evaluation results (including execution) to `output/example_exp/{model_name}_{task_type}_sample_{sample_num}_executed.json`.
+1. Run inference and save the results to `output/example_exp/{model_name}_{task_type}_sample_{sample_num}.json`.
+2. Perform evaluation using test cases and save the execution results to `output/example_exp/{model_name}_{task_type}_sample_{sample_num}_executed.json`.
 
 #### Example Output
 
@@ -168,13 +159,10 @@ The evaluation results will include the following details:
 - **`pass@1/3`**: Indicates the pass rate at either **pass@1** or **pass@3**, depending on the configuration.
 - **`parse_success_rate`**: The percentage of successful code parsing, validated using **Pylint** syntax checking.
 
----
-
 ## 💘Citation
 ```bibtex
 @article{zhang2024humanevalv,
-  title={HumanEval-V: Benchmarking High-Level Visual Reasoning
-with Complex Diagrams in Coding Tasks}, 
+  title={HumanEval-V: Benchmarking High-Level Visual Reasoning with Complex Diagrams in Coding Tasks}, 
   author={Zhang, Fengji and Wu, Linquan and Bai, Huiyu and Lin, Guancheng and Li, Xiao and Yu, Xiao and Wang, Yue and Chen, Bei and Keung, Jacky},
   journal={arXiv preprint arXiv:2410.12381},
   year={2024},
