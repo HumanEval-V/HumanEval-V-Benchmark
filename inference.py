@@ -3,8 +3,9 @@ import sys
 import fire
 import importlib
 from functools import partial
+from collections import Counter
 
-from utils import dump_json, load_json, load_data, delete_file, make_dir
+from utils import dump_json, load_json, load_data, delete_file, make_dir, aggregate_prediction_data
 from prompts import PROMPT_V2C, PROMPT_V2C_WITH_COT, PROMPT_T2C, PROMPT_V2T, PROMPT_ITER_V2C, PROMPT_ITER_V2T
 
 # experiment types
@@ -88,13 +89,17 @@ class Experiments:
         }
         return partial(model.query, loaded_model=loaded_model, prediction_file=prediction_file,  **params)
 
-    def load_data_to_run(self, prediction_file, generated_diagram_description_path, overwrite):
+    def load_data_to_run(self, sample_num, prediction_file, generated_diagram_description_path, overwrite):
         if overwrite:
             delete_file(prediction_file)
         previous_prediction = load_json(prediction_file)
-        existing_qids = {result['qid'] for result in previous_prediction}
-        dataset = load_data(qids_to_exclude=existing_qids, generated_diagram_description_path=generated_diagram_description_path)
-        print(f"{len(existing_qids)} tasks already been queried. {len(dataset['qid'])} tasks to run,")
+        existing_qids = set([result['qid'] for result in previous_prediction])
+        aggregated_prediction_data = aggregate_prediction_data(previous_prediction)
+        successful_qids = [result['qid'] for result in aggregated_prediction_data if len(result['predictions']) == sample_num]
+        successful_previous_predictions = [result for result in previous_prediction if result['qid'] in successful_qids]
+        dump_json(prediction_file, successful_previous_predictions)
+        dataset = load_data(qids_to_exclude=successful_qids, generated_diagram_description_path=generated_diagram_description_path)
+        print(f"{len(existing_qids)} tasks already been queried previously. {len(successful_qids)} of them were successful queried, leaving {len(dataset['qid'])} tasks to run, each task sample {sample_num} times")
         if not dataset['qid']:
             print("No tasks to query.")
         return dataset
@@ -109,11 +114,11 @@ class Experiments:
         loaded_model = model.load_model()
         
         generated_diagram_description_path = None
-        dataset = self.load_data_to_run(prediction_file, generated_diagram_description_path, overwrite)
+        dataset = self.load_data_to_run(sample_num, prediction_file, generated_diagram_description_path, overwrite)
         query_func = self.get_model_query_func(model, loaded_model, sample_num, prediction_file)
         runner = QueryRunner().run_v2c_prompting
         runner(dataset, query_func, cot)
-        
+
     def run_v2t2c_experiments(self, model_name, sample_num, exp_base_dir, with_strong_coder, overwrite=False):
         exp_type = EXP_V2T2C if not with_strong_coder else EXP_V2T2C_4o
         v2t_prediction_file, t2c_prediction_file = self.get_pred_file_path(model_name, exp_type, sample_num)
@@ -125,7 +130,7 @@ class Experiments:
 
         # first to generate diagram descriptions
         generated_diagram_description_path = None
-        dataset = self.load_data_to_run(v2t_prediction_file, generated_diagram_description_path, overwrite)
+        dataset = self.load_data_to_run(sample_num, v2t_prediction_file, generated_diagram_description_path, overwrite)
         query_func = self.get_model_query_func(model, loaded_model, sample_num, v2t_prediction_file)
         runner = QueryRunner().run_v2t_prompting
         runner(dataset, query_func)
@@ -135,7 +140,7 @@ class Experiments:
             model = self.load_model_class('gpt_4o')()
             loaded_model = model.load_model()
 
-        dataset = self.load_data_to_run(t2c_prediction_file, v2t_prediction_file, overwrite)
+        dataset = self.load_data_to_run(sample_num, t2c_prediction_file, v2t_prediction_file, overwrite)
         query_func = self.get_model_query_func(model, loaded_model, 1, t2c_prediction_file) # sample 1 for code generation
         runner = QueryRunner().run_t2c_prompting
         runner(dataset, query_func)
@@ -147,7 +152,7 @@ class Experiments:
         model = self.load_model_class(model_name)()
         loaded_model = model.load_model()
         generated_diagram_description_path = None
-        dataset = self.load_data_to_run(prediction_file, generated_diagram_description_path, overwrite)
+        dataset = self.load_data_to_run(sample_num, prediction_file, generated_diagram_description_path, overwrite)
         query_func = self.get_model_query_func(model, loaded_model, sample_num, prediction_file)
         runner = QueryRunner().run_t2c_prompting
         runner(dataset, query_func)

@@ -12,7 +12,7 @@ from collections import defaultdict
 from tqdm import tqdm
 from concurrent.futures import as_completed, ProcessPoolExecutor
 
-from utils import dump_json, load_json, dump_file, delete_file, load_data, make_dir
+from utils import dump_json, load_json, dump_file, delete_file, load_data, make_dir, aggregate_prediction_data
 from execution import check_correctness
 from inference import EXP_V2C, EXP_V2C_COT, EXP_V2T2C, EXP_V2T2C_4o, EXP_T2C, Experiments
 
@@ -238,32 +238,6 @@ def compute_score(execution_results):
         'parse_success_rate': parse_success_rate,
         # 'passed_qids': passed_qids
     }
-
-def aggregate_prediction_data(prediction_data):
-    # merge the prompts and predictions with the same qid
-    prediction_data_by_qid = defaultdict(list)
-    for item in prediction_data:
-        qid = item['qid']
-        prediction_data_by_qid[qid].append(item)
-    aggregated_prediction_data = []
-    max_prediction_len = 0
-    for qid in prediction_data_by_qid.keys():
-        prompts = []
-        predictions = []
-        for item in prediction_data_by_qid[qid]:
-            predictions += item['predictions']
-            prompts += [item['prompt']] * len(item['predictions'])
-        max_prediction_len = max(max_prediction_len, len(predictions))
-        if len(predictions) != max_prediction_len:
-            print(f"qid: {qid}, len(predictions): {len(predictions)}, max_prediction_len: {max_prediction_len}")
-            import ipdb
-            ipdb.set_trace()
-        aggregated_prediction_data.append({
-            'qid': qid,
-            'prompts': prompts,
-            'predictions': predictions
-        })
-    return aggregated_prediction_data
 
 def eval_pipeline(prediction_file, score_only=False):
     if not os.path.exists(prediction_file) and not os.path.exists(prediction_file.replace(".json", "_executed.json")):
